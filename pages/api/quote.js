@@ -1,53 +1,42 @@
+import { OpenAI } from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   const { input } = req.body;
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  if (!apiKey) {
-    return res.status(500).json({ error: 'OpenAI API key not configured.' });
-  }
 
   try {
-    const completion = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a helpful assistant that returns meaningful proverbs and quotes from around the world. For each user input, return 10 items with these fields: text, translation, language, country, author (if known), and theme.'
-          },
-          {
-            role: 'user',
-            content: `User input: "${input}". Please return 10 matching quotes as JSON array with fields: text, translation, language, country, author, theme.`
-          }
-        ],
-        temperature: 0.7
-      })
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'user',
+          content: `
+The user wrote: "${input}"
+
+Your task is to return at least 10 real proverbs, quotes, or meaningful sayings from various cultures around the world that match the user's emotion or situation.
+
+For each result, provide:
+1. The original quote (in its native language)
+2. The language and country of origin
+3. The translation of the quote into the language the user wrote in
+4. The emotion or theme it relates to
+5. If known, the name of the author
+
+Use a diverse mix from global cultures. Return the result as a JSON array named "quotes".
+        `,
+        },
+      ],
     });
 
-    const data = await completion.json();
-
-    const responseText = data.choices?.[0]?.message?.content;
-    let quotes = [];
-
-    try {
-      quotes = JSON.parse(responseText);
-    } catch (e) {
-      console.error('JSON parse error:', e);
-    }
+    const output = response.choices[0].message.content;
+    const quotes = JSON.parse(output.match(/\[.*\]/s)?.[0] || '[]');
 
     res.status(200).json({ quotes });
   } catch (error) {
-    console.error('API ERROR:', error);
-    res.status(500).json({ error: 'Something went wrong with the OpenAI API.' });
+    console.error('OpenAI API Error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch quote' });
   }
 }
