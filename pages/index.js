@@ -1,4 +1,4 @@
-import { useState } from 'react';
+""import { useState } from 'react';
 
 export default function Home() {
   const [input, setInput] = useState('');
@@ -22,7 +22,7 @@ export default function Home() {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       getQuotes();
     }
@@ -53,4 +53,4 @@ export default function Home() {
       </div>
     </main>
   );
-}
+}""
