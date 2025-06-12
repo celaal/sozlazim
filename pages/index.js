@@ -10,14 +10,27 @@ export default function Home() {
     setLoading(true);
     setQuotes([]);
 
-    const response = await fetch('/api/quote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ input })
-    });
+    try {
+      const response = await fetch('/api/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input })
+      });
 
-    const data = await response.json();
-    setQuotes(data.quotes || []);
+      const data = await response.json();
+      console.log('API response:', data); // DEBUG
+
+      if (response.ok && data.quotes) {
+        setQuotes(data.quotes);
+      } else {
+        console.error('Invalid API response');
+        setQuotes([]);
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setQuotes([]);
+    }
+
     setLoading(false);
   };
 
