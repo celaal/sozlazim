@@ -1,6 +1,5 @@
-// tailwind.css ile stillendirilmiş yeni tasarım dosyası
 // pages/index.js
-'tuse client'
+'use client';
 
 import { useState } from 'react';
 
@@ -8,22 +7,28 @@ export default function Home() {
   const [input, setInput] = useState('');
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [language, setLanguage] = useState('English');
+  const [error, setError] = useState(null);
 
   const handleSearch = async () => {
     if (!input.trim()) return;
     setLoading(true);
+    setError(null);
+    setQuotes([]);
     try {
       const res = await fetch('/api/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input, language }),
+        body: JSON.stringify({ input })
       });
       const data = await res.json();
-      setQuotes(data.quotes || []);
+      if (!Array.isArray(data.quotes)) {
+        setError('No quotes found.');
+      } else {
+        setQuotes(data.quotes);
+      }
     } catch (err) {
-      console.error('Error:', err);
-      setQuotes([]);
+      console.error(err);
+      setError('Something went wrong while fetching quotes.');
     } finally {
       setLoading(false);
     }
@@ -34,58 +39,40 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-white to-blue-50 text-gray-800 p-4 md:p-10">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl md:text-5xl font-bold mb-6 text-center">
-          Find Quotes That Match Your Emotion
-        </h1>
+    <main className="min-h-screen bg-gradient-to-br from-yellow-50 to-pink-100 p-6 text-gray-800">
+      <div className="max-w-3xl mx-auto text-center">
+        <h1 className="text-4xl font-bold mb-6 tracking-tight">What Would the World Say?</h1>
+        <p className="text-lg mb-8">Write your situation or feeling below and discover meaningful quotes from all around the world.</p>
 
-        <div className="flex flex-col sm:flex-row gap-2 mb-6">
+        <div className="flex flex-col sm:flex-row items-center gap-4 justify-center mb-8">
           <input
+            className="w-full sm:w-2/3 p-4 rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
             type="text"
-            className="flex-1 border border-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Type your emotion or situation..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
+            placeholder="e.g. I helped him but he didn’t help me back"
           />
-
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="border border-gray-300 p-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option>English</option>
-            <option>Turkish</option>
-            <option>French</option>
-            <option>German</option>
-            <option>Spanish</option>
-            <option>Arabic</option>
-            <option>Italian</option>
-          </select>
-
           <button
             onClick={handleSearch}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-md transition"
+            className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg shadow"
           >
             Search
           </button>
         </div>
 
-        {loading && <p className="text-center text-blue-600">Loading...</p>}
+        {loading && <p className="text-blue-600 mb-4">Loading quotes...</p>}
+        {error && <p className="text-red-600 mb-4">{error}</p>}
 
-        <div className="space-y-6">
-          {quotes.length > 0 && quotes.map((q, i) => (
-            <div
-              key={i}
-              className="bg-white border border-gray-200 p-5 rounded-lg shadow-md"
-            >
-              <p className="font-semibold text-lg">{q.text}</p>
-              <p className="italic text-gray-600">{q.translation}</p>
-              <div className="text-sm text-gray-500 mt-2">
-                <p><strong>Language:</strong> {q.language}</p>
-                {q.author && <p><strong>Author:</strong> {q.author}</p>}
-                {q.theme && <p><strong>Theme:</strong> {q.theme}</p>}
+        <div className="grid gap-6">
+          {quotes.map((q, i) => (
+            <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 shadow-md text-left">
+              <p className="font-semibold text-lg mb-1">🗣️ {q.text}</p>
+              <p className="italic text-gray-700 mb-2">💬 {q.translation}</p>
+              <div className="text-sm text-gray-500">
+                <p>🌐 <strong>Language:</strong> {q.language}</p>
+                {q.author && <p>👤 <strong>Author:</strong> {q.author}</p>}
+                {q.theme && <p>🎯 <strong>Theme:</strong> {q.theme}</p>}
               </div>
             </div>
           ))}
