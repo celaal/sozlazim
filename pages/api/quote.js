@@ -6,13 +6,14 @@ const openai = new OpenAI({
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { input } = req.body;
 
   if (!input || input.trim() === '') {
-    return res.status(400).json({ error: 'Empty input' });
+    return res.status(400).json({ error: 'Input is required' });
   }
 
   try {
@@ -21,19 +22,25 @@ export default async function handler(req, res) {
       messages: [
         {
           role: 'system',
-          content: `You are a multilingual quote expert. Provide quotes or proverbs from any culture that match the user's emotion.`,
+          content: `You are a multilingual quote expert. Provide at least 10 proverbs or meaningful quotes from different cultures that match the user's feeling. Each quote should include:
+
+- Original text
+- English translation
+- Language and country of origin
+- Author (if known)
+- Theme/emotion`
         },
         {
           role: 'user',
-          content: `User's input: "${input}"\n\nReturn at least 10 proverbs or famous quotes from different cultures, with:\n- The original quote\n- Language and country\n- English translation\n- Author if known\n- Associated theme`,
-        },
-      ],
+          content: `User wrote: "${input}"`
+        }
+      ]
     });
 
-    const result = completion.choices[0]?.message?.content || 'No quote found';
-    res.status(200).json({ result });
+    const result = completion.choices[0]?.message?.content || 'No result.';
+    return res.status(200).json({ result });
   } catch (error) {
-    console.error('API Error:', error.message);
-    res.status(500).json({ error: 'Failed to generate quote' });
+    console.error('OpenAI Error:', error);
+    return res.status(500).json({ error: 'Something went wrong while generating the quote.' });
   }
 }
