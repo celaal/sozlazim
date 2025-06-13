@@ -1,5 +1,4 @@
-// pages/api/quote.js
-import { Configuration, OpenAIApi } from 'openai';
+import { Configuration, OpenAIApi } from "openai";
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -8,58 +7,55 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Only POST requests allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   const { input } = req.body;
-  if (!input) {
-    return res.status(400).json({ error: 'Missing input' });
+
+  if (!input || typeof input !== "string") {
+    return res.status(400).json({ error: "Invalid input" });
   }
 
   try {
-    const prompt = `
-You are a quote and proverb generator. Given the situation or emotion: "${input}", 
-return a list of 10 quotes or proverbs from different cultures and languages.
+    const systemPrompt = `
+You are a global wisdom expert. A user will provide a situation or emotional experience.
+Your task is to return 10 famous quotes or proverbs from a wide variety of cultures and languages.
 
-Each item must include:
-1. "text": original quote in its native language.
-2. "translation": translation into the input's language (auto-detected).
-3. "language": language and country of origin.
-4. "author": person or "Anonymous".
-5. "theme": the emotional or philosophical context.
-
-Respond with a valid JSON array like:
+For each item, respond in this JSON structure:
 [
   {
-    "text": "...",
-    "translation": "...",
-    "language": "French (France)",
-    "author": "...",
-    "theme": "Trust"
-  },
+    "quote": "original quote in native language",
+    "translation": "translated version in user's language",
+    "language": "language and country of origin",
+    "author": "person or culture",
+    "theme": "emotion or theme like love, trust, betrayal"
+  }
   ...
 ]`;
 
-    const response = await openai.createChatCompletion({
-      model: 'gpt-4',
+    const userPrompt = `User input: "${input}"\nPlease provide 10 culturally diverse quotes.`;
+
+    const completion = await openai.createChatCompletion({
+      model: "gpt-4",
       messages: [
-        { role: 'system', content: 'You are a multilingual quote expert.' },
-        { role: 'user', content: prompt }
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
       ],
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 1500,
     });
 
-    const output = response.data.choices[0].message.content.trim();
-    const jsonStart = output.indexOf('[');
-    const jsonEnd = output.lastIndexOf(']') + 1;
-    const jsonString = output.substring(jsonStart, jsonEnd);
-    const parsed = JSON.parse(jsonString);
+    const output = completion.data.choices[0].message.content;
 
-    return res.status(200).json({ quotes: parsed });
+    const jsonStart = output.indexOf("[");
+    const jsonEnd = output.lastIndexOf("]") + 1;
+    const jsonString = output.slice(jsonStart, jsonEnd);
+
+    const quotes = JSON.parse(jsonString);
+    res.status(200).json({ quotes });
   } catch (error) {
-    console.error('API error:', error);
-    return res.status(500).json({ error: 'Failed to generate quotes', detail: error.message });
+    console.error("QUOTE API ERROR:", error);
+    res.status(500).json({ error: "Failed to fetch quotes", detail: error.message });
   }
 }
