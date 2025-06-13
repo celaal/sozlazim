@@ -5,60 +5,52 @@ export default function Home() {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = async () => {
+  const handleSearch = async (e) => {
+    e.preventDefault();
     if (!input.trim()) return;
     setLoading(true);
-    try {
-      const res = await fetch('/api/quote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input }),
-      });
-
-      const data = await res.json();
-      setQuotes(data.quotes || []);
-    } catch (error) {
-      console.error('API error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSearch();
-    }
+    const res = await fetch('/api/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input })
+    });
+    const data = await res.json();
+    setQuotes(data || []);
+    setLoading(false);
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '700px', margin: '0 auto' }}>
-      <h1>Find Quotes That Match Your Emotion</h1>
-      <textarea
-        rows={3}
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Describe your feeling or situation..."
-        style={{ width: '100%', padding: '10px', fontSize: '16px' }}
-      />
-      <button onClick={handleSearch} style={{ marginTop: '10px' }}>
-        Search
-      </button>
+    <div style={{ background: 'linear-gradient(to right, #1f1c2c, #928dab)', color: '#fff', fontFamily: 'Segoe UI, sans-serif', minHeight: '100vh', padding: '2rem' }}>
+      <h1 style={{ textAlign: 'center', fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '2rem' }}>🌍 Söz Lazım</h1>
 
-      {loading && <p>Loading...</p>}
+      <form onSubmit={handleSearch} style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <input
+          type="text"
+          placeholder="Hislerini ya da durumu yaz..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          style={{ padding: '0.8rem', fontSize: '1rem', borderRadius: '10px', border: 'none', width: '60%' }}
+        />
+        <button type="submit" style={{ background: '#ff6b6b', color: '#fff', border: 'none', padding: '0.8rem 1.5rem', fontSize: '1rem', borderRadius: '10px', cursor: 'pointer' }}>
+          Ara
+        </button>
+      </form>
 
-      <ul>
-        {quotes.map((quote, index) => (
-          <li key={index} style={{ margin: '1rem 0', lineHeight: 1.5 }}>
-            <strong>Text:</strong> {quote.text} <br />
-            <strong>Translation:</strong> {quote.translation} <br />
-            <strong>Language:</strong> {quote.language} ({quote.country}) <br />
-            {quote.author && <strong>Author:</strong>} {quote.author} <br />
-            <strong>Theme:</strong> {quote.theme}
-          </li>
-        ))}
-      </ul>
+      {loading ? (
+        <p style={{ textAlign: 'center', fontSize: '1.2rem' }}>Yükleniyor...</p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+          {quotes.map((q, i) => (
+            <div key={i} style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '1rem 1.5rem', borderRadius: '12px', boxShadow: '0 0 12px rgba(0,0,0,0.2)' }}>
+              <p><strong>📝 Orijinal:</strong> {q.text}</p>
+              <p><strong>🌐 Çeviri:</strong> {q.translation}</p>
+              <p><strong>🗺️ Ülke/Dil:</strong> {q.language}</p>
+              <p><strong>👤 Yazar:</strong> {q.author || 'Bilinmiyor'}</p>
+              <p><strong>🎭 Tema:</strong> {q.theme}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
